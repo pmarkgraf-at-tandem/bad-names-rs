@@ -1,80 +1,77 @@
-/// A no_std moving average calculator for i64 values over a fixed window size N.
-pub struct MovingAverage<const N: usize> {
-    buffer: [i64; N],
-    sum: i64,
-    count: usize,
-    index: usize,
+pub struct A<const B: usize> {
+    c: [i64; B],
+    d: i64,
+    e: usize,
+    f: usize,
 }
 
-impl<const N: usize> MovingAverage<N> {
-    /// Creates a new MovingAverage with all values initialized to 0.
-    pub const fn new() -> Self {
+impl<const B: usize> A<B> {
+    pub const fn a() -> Self {
         Self {
-            buffer: [0; N],
-            sum: 0,
-            count: 0,
-            index: 0,
+            c: [0; B],
+            d: 0,
+            e: 0,
+            f: 0,
         }
     }
 
-    /// Adds a new value and returns the current moving average as f64.
-    pub fn add(&mut self, value: i64) -> f64 {
-        let old = self.buffer[self.index];
-        self.buffer[self.index] = value;
-        self.index = (self.index + 1) % N;
-        if self.count < N {
-            self.count += 1;
-            self.sum += value;
+    pub fn b(&mut self, g: i64) -> f64 {
+        let h = self.c[self.f];
+        self.c[self.f] = g;
+        self.f = (self.f + 1) % B;
+        if self.e < B {
+            self.e += 1;
+            self.d += g;
         } else {
-            self.sum += value - old;
+            self.d += g - h;
         }
-        self.sum as f64 / self.count as f64
+        self.d as f64 / self.e as f64
     }
 }
 
 #[cfg(test)]
-mod tests {
+mod z {
     use super::*;
 
     #[test]
-    fn test_single_add() {
-        let mut ma = MovingAverage::<4>::new();
-        let avg = ma.add(10);
-        assert_eq!(avg, 10.0);
+    fn a() {
+        let mut b = A::<4>::a();
+        let c = b.b(10);
+        assert_eq!(c, 10.0);
     }
 
     #[test]
-    fn test_less_than_n_adds() {
-        let mut ma = MovingAverage::<3>::new();
-        assert_eq!(ma.add(5), 5.0);
-        assert_eq!(ma.add(7), 6.0);
+    fn b() {
+        let mut c = A::<3>::a();
+        assert_eq!(c.b(5), 5.0);
+        assert_eq!(c.b(7), 6.0);
     }
 
     #[test]
-    fn test_exactly_n_adds() {
-        let mut ma = MovingAverage::<3>::new();
-        assert_eq!(ma.add(1), 1.0);
-        assert_eq!(ma.add(2), 1.5);
-        assert_eq!(ma.add(3), 2.0);
+    fn c() {
+        let mut d = A::<3>::a();
+        assert_eq!(d.b(1), 1.0);
+        assert_eq!(d.b(2), 1.5);
+        assert_eq!(d.b(3), 2.0);
     }
 
     #[test]
-    fn test_more_than_n_adds() {
-        let mut ma = MovingAverage::<3>::new();
-        ma.add(1);
-        ma.add(2);
-        ma.add(3);
-        let avg = ma.add(4); // window is now [2,3,4]
-        assert_eq!(avg, 3.0);
-        let avg2 = ma.add(5); // window is now [3,4,5]
-        assert_eq!(avg2, 4.0);
+    fn d() {
+        let mut e = A::<3>::a();
+        e.b(1);
+        e.b(2);
+        e.b(3);
+        let f = e.b(4);
+        assert_eq!(f, 3.0);
+        let g = e.b(5);
+        assert_eq!(g, 4.0);
     }
 
     #[test]
-    fn test_negative_values() {
-        let mut ma = MovingAverage::<2>::new();
-        assert_eq!(ma.add(-2), -2.0);
-        assert_eq!(ma.add(2), 0.0);
-        assert_eq!(ma.add(4), 3.0);
+    fn e() {
+        let mut f = A::<2>::a();
+        assert_eq!(f.b(-2), -2.0);
+        assert_eq!(f.b(2), 0.0);
+        assert_eq!(f.b(4), 3.0);
     }
 }
