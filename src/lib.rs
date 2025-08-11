@@ -1,85 +1,80 @@
-pub fn func(mut a: [f64; X], b: &[f64], c: &[f64]) -> (Vec<f64>, [f64; X]) {
-    let d = b.len();
-    let e = c.len();
-    a[e - 1..e - 1 + d].copy_from_slice(b);
-    let mut f = vec![0.0; d];
-    for n in 0..d {
-        let mut g = 0.0;
-        for k in 0..e {
-            g += c[k] * a[e - 1 + n - k];
-        }
-        f[n] = g;
-    }
-    let mut h = [0.0; X];
-    h[..e - 1].copy_from_slice(&a[d..d + e - 1]);
-    h[e - 1..e - 1 + d].copy_from_slice(b);
-    (f, h)
+/// A no_std moving average calculator for i64 values over a fixed window size N.
+pub struct MovingAverage<const N: usize> {
+    buffer: [i64; N],
+    sum: i64,
+    count: usize,
+    index: usize,
 }
 
-const Z: usize = 80;
-const Y: usize = 63;
-const X: usize = Y - 1 + Z;
+impl<const N: usize> MovingAverage<N> {
+    /// Creates a new MovingAverage with all values initialized to 0.
+    pub const fn new() -> Self {
+        Self {
+            buffer: [0; N],
+            sum: 0,
+            count: 0,
+            index: 0,
+        }
+    }
+
+    /// Adds a new value and returns the current moving average as f64.
+    pub fn add(&mut self, value: i64) -> f64 {
+        let old = self.buffer[self.index];
+        self.buffer[self.index] = value;
+        self.index = (self.index + 1) % N;
+        if self.count < N {
+            self.count += 1;
+            self.sum += value;
+        } else {
+            self.sum += value - old;
+        }
+        self.sum as f64 / self.count as f64
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_one() {
-        let m = zeros();
-        let n = {
-            let mut o = vec![0.0; 8];
-            o[0] = 1.0;
-            o
-        };
-        let p = [1.0, 0.0, 0.0];
-        let (q, r) = func(m, &n, &p);
-        assert_eq!(q[0], 1.0);
-        for &v in &q[1..] {
-            assert_eq!(v, 0.0);
-        }
-        assert_eq!(r[p.len() - 1], 1.0);
+    fn test_single_add() {
+        let mut ma = MovingAverage::<4>::new();
+        let avg = ma.add(10);
+        assert_eq!(avg, 10.0);
     }
 
     #[test]
-    fn test_two() {
-        let m = zeros();
-        let n = vec![1.0; 8];
-        let o = [0.5, 0.5];
-        let (p, _) = func(m, &n, &o);
-        assert!((p[0] - 0.5).abs() < 1e-10);
-        for &v in &p[1..] {
-            assert!((v - 1.0).abs() < 1e-10);
-        }
+    fn test_less_than_n_adds() {
+        let mut ma = MovingAverage::<3>::new();
+        assert_eq!(ma.add(5), 5.0);
+        assert_eq!(ma.add(7), 6.0);
     }
 
     #[test]
-    fn test_three() {
-        let m = zeros();
-        let n = vec![0.0; 8];
-        let o = [0.2, 0.3, 0.5];
-        let (p, q) = func(m, &n, &o);
-        for &v in &p {
-            assert_eq!(v, 0.0);
-        }
-        for &v in &q {
-            assert!(v.abs() < 1e-10);
-        }
+    fn test_exactly_n_adds() {
+        let mut ma = MovingAverage::<3>::new();
+        assert_eq!(ma.add(1), 1.0);
+        assert_eq!(ma.add(2), 1.5);
+        assert_eq!(ma.add(3), 2.0);
     }
 
     #[test]
-    fn test_four() {
-        let m = zeros();
-        let n = vec![1.0, 2.0, 3.0, 4.0];
-        let o = [1.0, 2.0];
-        let (p, _) = func(m, &n, &o);
-        let q = [1.0, 4.0, 7.0, 10.0];
-        for (o, e) in p.iter().zip(q.iter()) {
-            assert!((o - e).abs() < 1e-10);
-        }
+    fn test_more_than_n_adds() {
+        let mut ma = MovingAverage::<3>::new();
+        ma.add(1);
+        ma.add(2);
+        ma.add(3);
+        let avg = ma.add(4); // window is now [2,3,4]
+        assert_eq!(avg, 3.0);
+        let avg2 = ma.add(5); // window is now [3,4,5]
+        assert_eq!(avg2, 4.0);
     }
 
-    fn zeros() -> [f64; X] {
-        [0.0; X]
+    #[test]
+    fn test_negative_values() {
+        let mut ma = MovingAverage::<2>::new();
+        assert_eq!(ma.add(-2), -2.0);
+        assert_eq!(ma.add(2), 0.0);
+        assert_eq!(ma.add(4), 3.0);
     }
 }
